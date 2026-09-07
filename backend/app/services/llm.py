@@ -88,19 +88,24 @@ class OllamaLLMProvider(BaseLLMProvider):
             logger.error(f"Ollama request failed: {str(e)}")
             raise RuntimeError(f"Failed to communicate with Ollama endpoint at {self.base_url}: {str(e)}")
 
-def get_llm_provider() -> BaseLLMProvider:
-    provider = settings.LLM_PROVIDER.lower()
-    model = settings.LLM_MODEL
+_llm_provider_instance = None
 
-    if provider == "mock":
-        return MockLLMProvider()
-    elif provider == "openai":
-        return OpenAILLMProvider(model_name=model)
-    elif provider == "gemini":
-        return GeminiLLMProvider(model_name=model)
-    elif provider == "ollama":
-        return OllamaLLMProvider(model_name=model)
-    else:
-        raise ValueError(
-            f"Unsupported LLM_PROVIDER '{provider}'. Supported providers: 'mock', 'openai', 'gemini', 'ollama'."
-        )
+def get_llm_provider() -> BaseLLMProvider:
+    global _llm_provider_instance
+    if _llm_provider_instance is None:
+        provider = settings.LLM_PROVIDER.lower()
+        model = settings.LLM_MODEL
+
+        if provider == "mock":
+            _llm_provider_instance = MockLLMProvider()
+        elif provider == "openai":
+            _llm_provider_instance = OpenAILLMProvider(model_name=model)
+        elif provider == "gemini":
+            _llm_provider_instance = GeminiLLMProvider(model_name=model)
+        elif provider == "ollama":
+            _llm_provider_instance = OllamaLLMProvider(model_name=model)
+        else:
+            raise ValueError(
+                f"Unsupported LLM_PROVIDER '{provider}'. Supported providers: 'mock', 'openai', 'gemini', 'ollama'."
+            )
+    return _llm_provider_instance

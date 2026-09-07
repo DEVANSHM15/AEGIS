@@ -51,13 +51,18 @@ class OpenAIEmbeddingProvider(BaseEmbeddingProvider):
         response = self.client.embeddings.create(input=[text], model=self.model_name)
         return response.data[0].embedding
 
-def get_embedding_provider() -> BaseEmbeddingProvider:
-    provider_type = settings.EMBEDDING_PROVIDER.lower()
-    model_name = settings.EMBEDDING_MODEL
+_embedding_provider_instance = None
 
-    if provider_type == "local":
-        return LocalSentenceTransformerProvider(model_name=model_name)
-    elif provider_type == "openai":
-        return OpenAIEmbeddingProvider(model_name=model_name)
-    else:
-        raise ValueError(f"Unsupported EMBEDDING_PROVIDER '{provider_type}'. Supported values: 'local', 'openai'")
+def get_embedding_provider() -> BaseEmbeddingProvider:
+    global _embedding_provider_instance
+    if _embedding_provider_instance is None:
+        provider_type = settings.EMBEDDING_PROVIDER.lower()
+        model_name = settings.EMBEDDING_MODEL
+
+        if provider_type == "local":
+            _embedding_provider_instance = LocalSentenceTransformerProvider(model_name=model_name)
+        elif provider_type == "openai":
+            _embedding_provider_instance = OpenAIEmbeddingProvider(model_name=model_name)
+        else:
+            raise ValueError(f"Unsupported EMBEDDING_PROVIDER '{provider_type}'. Supported values: 'local', 'openai'")
+    return _embedding_provider_instance

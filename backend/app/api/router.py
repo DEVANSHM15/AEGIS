@@ -12,6 +12,7 @@ from app.core.logging import logger
 from app.services.document_processor import DocumentProcessor
 from app.services.chunker import Chunker
 from app.services.embeddings import get_embedding_provider
+from app.services.llm import get_llm_provider
 from app.services.vector_store import VectorStore
 from app.services.rag import RAGPipeline
 
@@ -20,6 +21,11 @@ router = APIRouter()
 # Global Singleton instances
 vector_store = VectorStore()
 chunker = Chunker(chunk_size=settings.CHUNK_SIZE, chunk_overlap=settings.CHUNK_OVERLAP)
+rag_pipeline = RAGPipeline(
+    vector_store=vector_store,
+    embedding_provider=get_embedding_provider(),
+    llm_provider=get_llm_provider()
+)
 
 @router.get("/health", response_model=HealthResponse)
 def get_health():
@@ -112,8 +118,7 @@ def clear_all_documents():
 def chat_query(body: ChatRequest):
     logger.info(f"Chat question endpoint called: '{body.question}'")
     try:
-        pipeline = RAGPipeline(vector_store=vector_store)
-        result = pipeline.query(question=body.question)
+        result = rag_pipeline.query(question=body.question)
         return ChatResponse(
             answer=result["answer"],
             sources=result["sources"],
